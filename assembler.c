@@ -14,7 +14,8 @@
 
 int readAndParse(FILE *, char *, char *, char *, char *, char *);
 int isNumber(char *);
-int instr_type(char * field);
+int instr_type(char * );
+int R_type_conv(char * ,char * ,char * ,char * ,char * );
 
 int
 main(int argc, char *argv[])
@@ -48,7 +49,7 @@ main(int argc, char *argv[])
     /* here is an example for how to use readAndParse to read a line from
         inFilePtr */
     int type = 0;
-    while ( readAndParse(inFilePtr, label, opcode, arg1, arg1, arg2) ) {
+    while ( readAndParse(inFilePtr, label, opcode, arg0, arg1, arg2) ) {
         type = instr_type(opcode);
         if (type == R_TYPE) 
             printf("R\n");
@@ -58,6 +59,7 @@ main(int argc, char *argv[])
             printf("O\n");
         else
             printf("what is going on\n");
+        printf("%s , %s , %s , %s , %s \n", label, opcode, arg1, arg1, arg2 );
     }
 
     /* reached end of file */
@@ -70,6 +72,14 @@ main(int argc, char *argv[])
 
 
     return(0);
+}
+
+/* returns 1 for success, 0 for error
+ * generates a string of number representing line of assembly
+ * into machine code */
+int
+R_type_conv(char * label,char * opcode,char * arg0,char * arg1,char * arg2){
+
 }
 
 /* return type of instruction scanned
