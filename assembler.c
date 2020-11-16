@@ -29,7 +29,7 @@ main(int argc, char *argv[])
             argv[0]);
         exit(1);
     }
-    printf("correct input detected\n");
+    printf("Correct input detected\n");
 
     inFileString = argv[1];
     outFileString = argv[2];
@@ -47,13 +47,17 @@ main(int argc, char *argv[])
 
     /* here is an example for how to use readAndParse to read a line from
         inFilePtr */
-    int count = 0;
+    int type = 0;
     while ( readAndParse(inFilePtr, label, opcode, arg1, arg1, arg2) ) {
-        count++; 
-        printf("%d\n",count);
-        if (!strcmp(opcode, "lw")) {
-            printf("we found the load instruction\n");
-        }
+        type = instr_type(opcode);
+        if (type == R_TYPE) 
+            printf("R\n");
+        else if (type == I_TYPE) 
+            printf("I\n");
+        else if (type == O_TYPE) 
+            printf("O\n");
+        else
+            printf("what is going on\n");
     }
 
     /* reached end of file */
