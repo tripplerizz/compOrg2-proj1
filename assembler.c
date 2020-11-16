@@ -16,6 +16,7 @@ int readAndParse(FILE *, char *, char *, char *, char *, char *);
 int isNumber(char *);
 int instr_type(char * );
 int R_type_conv(char * ,char * ,char * ,char * ,char * );
+int opcode_gen(char * );
 
 int
 main(int argc, char *argv[])
@@ -49,10 +50,14 @@ main(int argc, char *argv[])
     /* here is an example for how to use readAndParse to read a line from
         inFilePtr */
     int type = 0;
+    int oppies = 0;
     while ( readAndParse(inFilePtr, label, opcode, arg0, arg1, arg2) ) {
         type = instr_type(opcode);
-        if (type == R_TYPE) 
+        if (type == R_TYPE) {
             printf("R\n");
+            oppies = opcode_gen(opcode);
+            printf("%d\n", oppies);
+        }
         else if (type == I_TYPE) 
             printf("I\n");
         else if (type == O_TYPE) 
@@ -74,12 +79,45 @@ main(int argc, char *argv[])
     return(0);
 }
 
+/* return -1 for error
+ * generates opp code number sequence in hexadecimal*/
+int
+opcode_gen(char * opcode){
+    if (!strcmp(opcode, "add")){
+        return 0; 
+    }
+    if (!strcmp(opcode, "nand")){
+        return 1; 
+    }
+    if (!strcmp(opcode, "lw")){
+        return 2; 
+    }
+    if (!strcmp(opcode, "sw")){
+        return 3; 
+    }
+    if (!strcmp(opcode, "beq")){
+        return 4; 
+    }
+    if (!strcmp(opcode, "jalr")){
+        return 5; 
+    }
+    if (!strcmp(opcode, "halt")){
+        return 6; 
+    }
+    if (!strcmp(opcode, "noop")){
+        return 7; 
+    }
+    
+    return -1;
+}
+
 /* returns 1 for success, 0 for error
  * generates a string of number representing line of assembly
  * into machine code */
 int
 R_type_conv(char * label,char * opcode,char * arg0,char * arg1,char * arg2){
-
+    int op_trans = opcode_gen(opcode);   
+    return 0;
 }
 
 /* return type of instruction scanned
