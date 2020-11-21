@@ -17,6 +17,8 @@ int isNumber(char *);
 int instr_type(char * );
 int R_type_conv(char * ,char * ,char * ,char * ,char * );
 int opcode_gen(char * );
+void write_bin(FILE * fd, int number, int bits );
+void itoa(int num, char * str, int base);
 
 int
 main(int argc, char *argv[])
@@ -81,7 +83,7 @@ main(int argc, char *argv[])
 }
 
 /* return -1 for error
- * generates opp code number sequence in hexadecimal*/
+ * generates opp code number sequence in decimal*/
 int
 opcode_gen(char * opcode){
     if (!strcmp(opcode, "add")){
@@ -119,6 +121,30 @@ int
 R_type_conv(char * label,char * opcode,char * arg0,char * arg1,char * arg2){
     int op_trans = opcode_gen(opcode);   
     return 0;
+}
+void
+write_bin(FILE * fd ,int number, int bits ){
+    char buffer[32];
+    itoa(number, buffer, 2);
+    int binary = atoi(buffer);
+    fprintf(fd, "%0*d\n",bits, binary);
+}
+
+void
+itoa(int num, char * str, int base){
+    int remainder = 0;
+    int index = 0;
+    while(num != 0){
+        remainder = num % base; 
+        if (remainder > 9){
+            str[index++] = (remainder-10) + 'a'; 
+        }
+        else{
+            str[index++] =  remainder + '0'; 
+        }
+        num = num/base; 
+    }
+    str[index] = '\0';
 }
 
 /* return type of instruction scanned
