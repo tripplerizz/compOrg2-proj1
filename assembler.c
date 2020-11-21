@@ -19,6 +19,10 @@ int R_type_conv(char * ,char * ,char * ,char * ,char * );
 int opcode_gen(char * );
 void write_bin(FILE * fd, int number, int bits );
 void itoa(int num, char * str, int base);
+void write_r_instr(FILE*, char*, char*, char*,char*);
+void write_i_instr(FILE*, char*, char*, char*,char*);
+void write_j_instr(FILE*, char*, char*, char*,char*);
+void write_o_instr(FILE*, char*, char*, char*,char*);
 
 int
 main(int argc, char *argv[])
@@ -57,13 +61,16 @@ main(int argc, char *argv[])
         type = instr_type(opcode);
         if (type == R_TYPE) {
             printf("R\n");
-            oppies = opcode_gen(opcode);
-            printf("%d\n", oppies);
+            write_r_instr(outFilePtr, opcode, arg0, arg1, arg2);
         }
-        else if (type == I_TYPE) 
+        else if (type == I_TYPE){
             printf("I\n");
-        else if (type == O_TYPE) 
+            write_i_instr(outFilePtr, opcode, arg0, arg1, arg2);
+        }
+        else if (type == O_TYPE){ 
             printf("O\n");
+            write_o_instr(outFilePtr, opcode, arg0, arg1, arg2);
+        }
         else{
             printf("could be the fil\n");
         }
@@ -122,29 +129,90 @@ R_type_conv(char * label,char * opcode,char * arg0,char * arg1,char * arg2){
     int op_trans = opcode_gen(opcode);   
     return 0;
 }
+void 
+write_r_instr(FILE* fd, char*opcode, char* arg0, char* arg1,char* arg2){
+    int tempNum = opcode_gen(opcode);
+    write_bin(fd,tempNum,11 );
+    tempNum = atoi(arg0);
+    write_bin(fd, tempNum, 3);
+    tempNum = atoi(arg1);
+    write_bin(fd, tempNum, 3);
+    fprintf(fd,"%0*d", 13, 0);
+    tempNum = atoi(arg2);
+    write_bin(fd, tempNum, 3);
+    fprintf(fd,"\n");
+
+}
+void 
+write_i_instr(FILE* fd, char*opcode, char* arg0, char* arg1,char* arg2){
+    int tempNum = opcode_gen(opcode);
+    write_bin(fd,tempNum,11 );
+    tempNum = atoi(arg0);
+    write_bin(fd, tempNum, 3);
+    tempNum = atoi(arg1);
+    write_bin(fd, tempNum, 3);
+    tempNum = atoi(arg2);
+    write_bin(fd, tempNum, 16);
+    fprintf(fd,"\n");
+
+}
+void 
+write_o_instr(FILE* fd, char*opcode, char* arg0, char* arg1,char* arg2){
+    int tempNum = opcode_gen(opcode);
+    write_bin(fd,tempNum,11 );
+    tempNum = atoi(arg0);
+    write_bin(fd, tempNum, 3);
+    tempNum = atoi(arg1);
+    write_bin(fd, tempNum, 3);
+    tempNum = 0;
+    write_bin(fd, tempNum, 16);
+    fprintf(fd,"\n");
+
+}
+void 
+write_j_instr(FILE* fd, char*opcode, char* arg0, char* arg1,char* arg2){
+    int tempNum = opcode_gen(opcode);
+    write_bin(fd,tempNum,11 );
+    tempNum = 0;
+    write_bin(fd, tempNum, 22);
+    fprintf(fd,"\n");
+
+}
+/* writes a number in binary with bit padding*/
 void
 write_bin(FILE * fd ,int number, int bits ){
     char buffer[32];
     itoa(number, buffer, 2);
     int binary = atoi(buffer);
-    fprintf(fd, "%0*d\n",bits, binary);
+    fprintf(fd, "%0*d",bits, binary);
 }
 
 void
 itoa(int num, char * str, int base){
     int remainder = 0;
     int index = 0;
+    int temps[32];
     while(num != 0){
         remainder = num % base; 
         if (remainder > 9){
-            str[index++] = (remainder-10) + 'a'; 
+            str[index] = (remainder-10) + 'a'; 
+            temps[index] = str[index];
+            index++;
         }
         else{
-            str[index++] =  remainder + '0'; 
+            str[index] =  remainder + '0'; 
+            temps[index] = str[index];
+            index++;
         }
         num = num/base; 
     }
     str[index] = '\0';
+    int reverse;
+    for(int i = 0; i < index; i++){
+        reverse = index -1 - i;
+        str[i] = temps[reverse];
+    }
+    return;
 }
 
 /* return type of instruction scanned
