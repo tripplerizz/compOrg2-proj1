@@ -62,9 +62,10 @@ main(int argc, char *argv[])
             printf("I\n");
         else if (type == O_TYPE) 
             printf("O\n");
-        else
-            printf("what is going on\n");
-        printf("%s , %s , %s , %s , %s \n", label, opcode, arg1, arg1, arg2 );
+        else{
+            printf("could be the fil\n");
+        }
+        printf("%s , %s , %s , %s , %s \n", label, opcode, arg0, arg1, arg2 );
     }
 
     /* reached end of file */
