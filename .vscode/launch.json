@@ -9,7 +9,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["test.txt", "outcome.txt"]
+            "args": ["outcome.txt", "sim.txt"]
         },
         {
             "name": "(gdb) Attach",
