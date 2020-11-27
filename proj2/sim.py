@@ -41,9 +41,9 @@ def i_type_instr(opcode, instr, state):
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[16:32],1)
     if op_type[opcode] == 'lw':
-        state.register[arg1] = state.memory[arg0 + arg2]  
+        state.register[arg1] = state.memory[state.register[arg0] + state.memory[arg2 + 1] ]  
     if op_type[opcode] == 'sw':
-        state.memory[arg0 +arg2 ] = state.register[arg1]  
+        state.memory[state.register[arg0] +arg2 + 1] = state.register[arg1]  
     if op_type[opcode] == 'beq':
         if (state.register[arg0] - state.register[arg1]) == 0:
             state.pc + arg2

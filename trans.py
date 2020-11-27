@@ -61,11 +61,15 @@ for line in assembler:
             assemble[assemble.index(item)] = fill_dict[item] - lineCount - 1
         else:
             assemble[assemble.index(item)] = fill_dict[item]
-    if instr_type[assemble[1]] == 'I' or instr_type[assemble[1]] == 'R':
+    if  instr_type[assemble[1]] == 'R':
         arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
         arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
         arg2 = "{args2:b}".format(args2 = int(assemble[4])).zfill(16)
-    if instr_type[assemble[1]] == 'J':
+    if  instr_type[assemble[1]] == 'J':
+        arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
+        arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
+        arg2 = "{args2:b}".format(args2 = 0).zfill(16)
+    if  instr_type[assemble[1]] == 'I':
         arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
         arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
         num = (int(assemble[4]))
