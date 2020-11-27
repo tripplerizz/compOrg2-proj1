@@ -1,8 +1,10 @@
+# Hector Rizo
+# this program is written in python, using python version 3 or higher.
 import sys
 
 instr_type = {0: "R", 1:"R",
            2:"I", 3: "I",
-           4:"J",5: "J",
+           4:"I",5: "J",
            6:"O", 7:"O"}
 op_type = {0:"add", 1:"nand",
            2:"lw", 3:"sw",
@@ -14,6 +16,7 @@ class pc_state():
     memNum = 0
     memory = []
     register = [0,0,0,0,0,0,0,0]
+    done = 0
 
 def twoConv(val, bits):
     if (val & (1 << (bits - 1))) != 0:
@@ -41,17 +44,24 @@ def i_type_instr(opcode, instr, state):
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[16:32],1)
     if op_type[opcode] == 'lw':
-        state.register[arg1] = state.memory[state.register[arg0] + state.memory[arg2 + 1] ]  
+        state.register[arg1] = state.memory[state.register[arg0] + arg2 ]  
     if op_type[opcode] == 'sw':
         state.memory[state.register[arg0] +arg2 + 1] = state.register[arg1]  
     if op_type[opcode] == 'beq':
         if (state.register[arg0] - state.register[arg1]) == 0:
-            state.pc + arg2
+            state.pc += arg2
 def o_type_instr(opcode, instr, state):
     if op_type[opcode] == 'halt':
-        exit(1)
+        state.done = 1
+        return
     if op_type[opcode] == 'noop':
         return
+def j_type_instr(opcode, instr, state):
+    arg0 = binToNum(instr[10:13],0)
+    arg1 = binToNum(instr[13:16],0)
+    state.register[arg1] = state.pc +1
+    state.pc = state.register[arg0]
+
 
 def readInstr(instr, state):
     opcode = binToNum(instr[0:10],0)
@@ -65,6 +75,7 @@ def readInstr(instr, state):
         i_type_instr(opcode, instr, state)
         return
     if instr_type[opcode] == 'J':
+        j_type_instr(opcode, instr, state)
         return
 
     return 0
@@ -89,11 +100,13 @@ state = pc_state()
 with open(sys.argv[1], 'r') as assembly:
     for line in assembly:
         state.memory.append(int(line))
+        state.memNum +=1
 
 with open(sys.argv[1], 'r') as assembly:
-    for line in assembly:
+    while(True):
+        printState(state)
+        if state.done :
+            break
         instr = numToBin(state.memory[state.pc])
         readInstr(instr, state)
-        printState(state)
         state.pc +=1
-        state.memNum +=1

@@ -1,9 +1,10 @@
-
+# Hector Rizo
+# this program is written in python, using python version 3 or higher.
 import sys
 
 instr_type = {"add": "R", "nand":"R",
            "lw":"I", "sw": "I",
-           "beq":"J","jalr": "J",
+           "beq":"I","jalr": "J",
            "halt":"O", "noop":"O",
            ".fill": "F"}
 opcodes = {"add": 0, "nand":1,
@@ -58,7 +59,10 @@ for line in assembler:
     checkItems = checkArgs(assemble[1:5])
     for item in checkItems:
         if instr_type[assemble[1]] != 'F':
-            assemble[assemble.index(item)] = fill_dict[item] - lineCount - 1
+            if assemble[1] == 'beq':
+                assemble[assemble.index(item)] = fill_dict[item] - lineCount - 1
+            else:
+                assemble[assemble.index(item)] = fill_dict[item] - lineCount  
         else:
             assemble[assemble.index(item)] = fill_dict[item]
     if  instr_type[assemble[1]] == 'R':
