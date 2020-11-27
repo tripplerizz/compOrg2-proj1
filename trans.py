@@ -11,7 +11,7 @@ opcodes = {"add": 0, "nand":1,
            "beq":4,"jalr": 5,
            ".fill":0,"halt":6, 
            "noop":7}
-def twos_comp(val, bits):
+def twoConv(val, bits):
     if (val & (1 << (bits - 1))) != 0:
         val = val - (1 << bits) 
     return val  
@@ -71,7 +71,7 @@ for line in assembler:
         num = (int(assemble[4]))
         if num < 0:
             num = (int(assemble[4]) ^ 0xFFFF) + 1
-            num = twos_comp(num, 16) * -1
+            num = twoConv(num, 16) * -1
             arg2 = "{args0:b}".format(args0 =num).zfill(16)
         else:
             arg2 = "{args2:b}".format(args2 = int(assemble[4])).zfill(16)
@@ -83,7 +83,7 @@ for line in assembler:
         num = (int(assemble[2]))
         if num < 0:
             num = (int(assemble[2]) ^ 0xFFFF) + 1
-            num = twos_comp(num, 16) * -1
+            num = twoConv(num, 16) * -1
             arg2 = "{args0:b}".format(args0 =num).zfill(16)
         else:
             arg2 = "{args0:b}".format(args0 =int(assemble[2])).zfill(16)
