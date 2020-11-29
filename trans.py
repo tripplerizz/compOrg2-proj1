@@ -36,6 +36,12 @@ def getFills(items):
 
     return result
 
+def getArgs(first, second, third):
+    num1 = "{args0:b}".format(args0 = int(first)).zfill(3)
+    num2 ="{args1:b}".format(args1 = int(second)).zfill(3)
+    num3 = "{args2:b}".format(args2 = int(third)).zfill(16)
+    return num1, num2, num3
+
 if len(sys.argv) < 3:
     print("huston we got prblm")
     exit
@@ -60,33 +66,28 @@ for line in assembler:
     for item in checkItems:
         if instr_type[assemble[1]] != 'F':
             if assemble[1] == 'beq':
-                assemble[assemble.index(item)] = fill_dict[item] - lineCount - 1
+                assemble[assemble.index(item)] = (fill_dict[item] - lineCount) - 1    
             else:
-                assemble[assemble.index(item)] = fill_dict[item] - lineCount  
+                assemble[assemble.index(item)] = fill_dict[item]
         else:
             assemble[assemble.index(item)] = fill_dict[item]
+
     if  instr_type[assemble[1]] == 'R':
-        arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
-        arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
-        arg2 = "{args2:b}".format(args2 = int(assemble[4])).zfill(16)
+        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], assemble[4])
     if  instr_type[assemble[1]] == 'J':
-        arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
-        arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
-        arg2 = "{args2:b}".format(args2 = 0).zfill(16)
+        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
     if  instr_type[assemble[1]] == 'I':
-        arg0 = "{args0:b}".format(args0 = int(assemble[2])).zfill(3)
-        arg1 ="{args1:b}".format(args1 = int(assemble[3])).zfill(3)
-        num = (int(assemble[4]))
+        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
+        if not type(assemble[4]) == int: 
+            num = (int(assemble[4])) 
+        else:
+            num = (assemble[4])
         if num < 0:
             num = (int(assemble[4]) ^ 0xFFFF) + 1
             num = twoConv(num, 16) * -1
-            arg2 = "{args0:b}".format(args0 =num).zfill(16)
-        else:
-            arg2 = "{args2:b}".format(args2 = int(assemble[4])).zfill(16)
+        arg2 = "{args2:b}".format(args2 =num).zfill(16)
     if instr_type[assemble[1]] == 'O':
-        arg0 = "{args0:b}".format(args0 = 0).zfill(3)
-        arg1 ="{args1:b}".format(args1 = 0).zfill(3)
-        arg2 = "{args2:b}".format(args2 = 0).zfill(16)
+        arg0, arg1, arg2 = getArgs('0','0','0')
     if instr_type[assemble[1]] == 'F':
         num = (int(assemble[2]))
         if num < 0:

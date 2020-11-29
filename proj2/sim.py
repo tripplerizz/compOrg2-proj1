@@ -14,7 +14,7 @@ op_type = {0:"add", 1:"nand",
 class pc_state():
     pc = 0
     memNum = 0
-    memory = []
+    memory = [0] * 65536
     register = [0,0,0,0,0,0,0,0]
     done = 0
 
@@ -43,7 +43,7 @@ def i_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[16:32],1)
-    if op_type[opcode] == 'lw':
+    if op_type[opcode] == 'lw':  
         state.register[arg1] = state.memory[state.register[arg0] + arg2 ]  
     if op_type[opcode] == 'sw':
         state.memory[state.register[arg0] +arg2 + 1] = state.register[arg1]  
@@ -84,7 +84,7 @@ def printState(state):
     print("state:")
     print("\tpc {num}".format(num = state.pc))
     print("\tmemory:")
-    for count, val in enumerate(state.memory):
+    for count, val in enumerate(state.memory[:state.memNum]):
         print("\t\tmem[ {index} ] {num}".format(index = count, num = val))
     print("\tregisters:")
     for count, val in enumerate(state.register):
@@ -99,7 +99,7 @@ if len(sys.argv) < 3:
 state = pc_state()
 with open(sys.argv[1], 'r') as assembly:
     for line in assembly:
-        state.memory.append(int(line))
+        state.memory[state.memNum] = (int(line))
         state.memNum +=1
 
 with open(sys.argv[1], 'r') as assembly:
