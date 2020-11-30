@@ -57,8 +57,8 @@ arg0 = ""
 arg1 = ""
 arg2 = ""
 
+lineCount = 0
 try:
-    lineCount = 0
     for line in assembler:
         assemble = line.strip('\n').split('\t')
         opcode = opcodes[assemble[1]]
@@ -99,7 +99,8 @@ try:
             machine.writelines(str(assemble[2]) + '\n')
             print(assemble[2])
         lineCount+=1
-    machine.close()
-    exit(0)
 except:
+    print("error detected")
     exit(1)
+machine.close()
+exit(0)

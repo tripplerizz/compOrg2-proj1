@@ -95,7 +95,7 @@ def printState(state):
     print("\tregisters:")
     for count, val in enumerate(state.register):
         print("\t\treg[ {index} ] {num}".format(index = count, num = val))
-    print("end state")
+    print("end state\n")
 #------------------------------------------------------------------------
 # start of the program
 if len(sys.argv) < 2:
