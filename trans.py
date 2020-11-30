@@ -57,51 +57,49 @@ arg0 = ""
 arg1 = ""
 arg2 = ""
 
-lineCount = 0
-for line in assembler:
-    assemble = line.strip('\n').split('\t')
-    opcode = opcodes[assemble[1]]
-    strTillOpp = "{opcode:b}".format(opcode = opcode).zfill(10)
-    checkItems = checkArgs(assemble[1:5])
-    for item in checkItems:
-        if instr_type[assemble[1]] != 'F':
+try:
+    lineCount = 0
+    for line in assembler:
+        assemble = line.strip('\n').split('\t')
+        opcode = opcodes[assemble[1]]
+        strTillOpp = "{opcode:b}".format(opcode = opcode).zfill(10)
+        checkItems = checkArgs(assemble[1:5])
+        for item in checkItems:
             if assemble[1] == 'beq':
-                assemble[assemble.index(item)] = (fill_dict[item] - lineCount) - 1    
+                assemble[assemble.index(item)] = (fill_dict[item] - lineCount) - 1     
             else:
                 assemble[assemble.index(item)] = fill_dict[item]
-        else:
-            assemble[assemble.index(item)] = fill_dict[item]
 
-    if  instr_type[assemble[1]] == 'R':
-        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], assemble[4])
-    if  instr_type[assemble[1]] == 'J':
-        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
-    if  instr_type[assemble[1]] == 'I':
-        arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
-        if not type(assemble[4]) == int: 
+        if  instr_type[assemble[1]] == 'R':
+            arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], assemble[4])
+        if  instr_type[assemble[1]] == 'J':
+            arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
+        if  instr_type[assemble[1]] == 'I':
+            arg0, arg1, arg2 = getArgs(assemble[2], assemble[3], '0')
             num = (int(assemble[4])) 
+            if num < 0:
+                num = (int(assemble[4]) ^ 0xFFFF) + 1
+                num = twoConv(num, 16) * -1
+            arg2 = "{args2:b}".format(args2 =num).zfill(16)
+        if instr_type[assemble[1]] == 'O':
+            arg0, arg1, arg2 = getArgs('0','0','0')
+        if instr_type[assemble[1]] == 'F':
+            num = (int(assemble[2]))
+            if num < 0:
+                num = (int(assemble[2]) ^ 0xFFFF) + 1
+                num = twoConv(num, 16) * -1
+                arg2 = "{args0:b}".format(args0 =num).zfill(16)
+            else:
+                arg2 = "{args0:b}".format(args0 =int(assemble[2])).zfill(16)
+        if instr_type[assemble[1]] != 'F':
+            temp = strTillOpp + arg0 + arg1 + arg2
+            machine.writelines(str(int(temp,2)) + '\n')
+            print(int(temp,2))
         else:
-            num = (assemble[4])
-        if num < 0:
-            num = (int(assemble[4]) ^ 0xFFFF) + 1
-            num = twoConv(num, 16) * -1
-        arg2 = "{args2:b}".format(args2 =num).zfill(16)
-    if instr_type[assemble[1]] == 'O':
-        arg0, arg1, arg2 = getArgs('0','0','0')
-    if instr_type[assemble[1]] == 'F':
-        num = (int(assemble[2]))
-        if num < 0:
-            num = (int(assemble[2]) ^ 0xFFFF) + 1
-            num = twoConv(num, 16) * -1
-            arg2 = "{args0:b}".format(args0 =num).zfill(16)
-        else:
-            arg2 = "{args0:b}".format(args0 =int(assemble[2])).zfill(16)
-    if instr_type[assemble[1]] != 'F':
-        temp = strTillOpp + arg0 + arg1 + arg2
-        machine.writelines(str(int(temp,2)) + '\n')
-        print(int(temp,2))
-    else:
-        machine.writelines(str(assemble[2]) + '\n')
-        print(assemble[2])
-    lineCount+=1
-machine.close()
+            machine.writelines(str(assemble[2]) + '\n')
+            print(assemble[2])
+        lineCount+=1
+    machine.close()
+    exit(0)
+except:
+    exit(1)

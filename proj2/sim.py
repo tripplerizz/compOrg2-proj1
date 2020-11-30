@@ -31,6 +31,10 @@ def binToNum(number, neg):
         if number[0] ==  '1':
             num = twoConv(num,len(number))
     return num
+def nand(one,two):
+    result = one & two
+    result = ~result 
+    return result
 def r_type_instr(opcode,instr,state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
@@ -38,18 +42,20 @@ def r_type_instr(opcode,instr,state):
     if op_type[opcode] == 'add':
         state.register[arg2] = state.register[arg0] + state.register[arg1]
     if op_type[opcode] == 'nand':
-        state.register[arg2] = state.register[arg0] & state.register[arg1]
+        state.register[arg2] = nand(state.register[arg0],state.register[arg1])
 def i_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[16:32],1)
     if op_type[opcode] == 'lw':  
         state.register[arg1] = state.memory[state.register[arg0] + arg2 ]  
-    if op_type[opcode] == 'sw':
-        state.memory[state.register[arg0] +arg2 + 1] = state.register[arg1]  
+        return
     if op_type[opcode] == 'beq':
         if (state.register[arg0] - state.register[arg1]) == 0:
             state.pc += arg2
+            return
+    if op_type[opcode] == 'sw':
+        state.memory[state.register[arg0] + arg2] = state.register[arg1]  
 def o_type_instr(opcode, instr, state):
     if op_type[opcode] == 'halt':
         state.done = 1
@@ -59,8 +65,8 @@ def o_type_instr(opcode, instr, state):
 def j_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
-    state.register[arg1] = state.pc +1
-    state.pc = state.register[arg0]
+    state.register[arg0] = state.pc +1
+    state.pc = state.register[arg1] -1
 
 
 def readInstr(instr, state):
@@ -92,7 +98,7 @@ def printState(state):
     print("end state")
 #------------------------------------------------------------------------
 # start of the program
-if len(sys.argv) < 3:
+if len(sys.argv) < 2:
     print("huston we got prblm")
     exit
 
@@ -102,11 +108,10 @@ with open(sys.argv[1], 'r') as assembly:
         state.memory[state.memNum] = (int(line))
         state.memNum +=1
 
-with open(sys.argv[1], 'r') as assembly:
-    while(True):
-        printState(state)
-        if state.done :
-            break
-        instr = numToBin(state.memory[state.pc])
-        readInstr(instr, state)
-        state.pc +=1
+while(True):
+    printState(state)
+    if state.done :
+        break
+    instr = numToBin(state.memory[state.pc])
+    readInstr(instr, state)
+    state.pc +=1
