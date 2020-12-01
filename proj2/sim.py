@@ -10,13 +10,12 @@ op_type = {0:"add", 1:"nand",
            2:"lw", 3:"sw",
            4:"beq",5:"jalr",
            6:"halt", 7:"noop"}
-
-class pc_state():
+done = 0
+class stateStruct():
     pc = 0
-    memNum = 0
-    memory = [0] * 65536
-    register = [0,0,0,0,0,0,0,0]
-    done = 0
+    numMemory = 0
+    mem = [0] * 65536
+    reg = [0,0,0,0,0,0,0,0]
 
 def twoConv(val, bits):
     if (val & (1 << (bits - 1))) != 0:
@@ -40,33 +39,34 @@ def r_type_instr(opcode,instr,state):
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[29:32],0)
     if op_type[opcode] == 'add':
-        state.register[arg2] = state.register[arg0] + state.register[arg1]
+        state.reg[arg2] = state.reg[arg0] + state.reg[arg1]
     if op_type[opcode] == 'nand':
-        state.register[arg2] = nand(state.register[arg0],state.register[arg1])
+        state.reg[arg2] = nand(state.reg[arg0],state.reg[arg1])
 def i_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
     arg2 = binToNum(instr[16:32],1)
     if op_type[opcode] == 'lw':  
-        state.register[arg1] = state.memory[state.register[arg0] + arg2 ]  
+        state.reg[arg1] = state.mem[state.reg[arg0] + arg2 ]  
         return
     if op_type[opcode] == 'beq':
-        if (state.register[arg0] - state.register[arg1]) == 0:
+        if (state.reg[arg0] - state.reg[arg1]) == 0:
             state.pc += arg2
             return
     if op_type[opcode] == 'sw':
-        state.memory[state.register[arg0] + arg2] = state.register[arg1]  
+        state.mem[state.reg[arg0] + arg2] = state.reg[arg1]  
 def o_type_instr(opcode, instr, state):
     if op_type[opcode] == 'halt':
-        state.done = 1
+        global done
+        done = 1
         return
     if op_type[opcode] == 'noop':
         return
 def j_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
-    state.register[arg0] = state.pc +1
-    state.pc = state.register[arg1] -1
+    state.reg[arg0] = state.pc +1
+    state.pc = state.reg[arg1] -1
 
 
 def readInstr(instr, state):
@@ -90,10 +90,10 @@ def printState(state):
     print("state:")
     print("\tpc {num}".format(num = state.pc))
     print("\tmemory:")
-    for count, val in enumerate(state.memory[:state.memNum]):
+    for count, val in enumerate(state.mem[:state.numMemory]):
         print("\t\tmem[ {index} ] {num}".format(index = count, num = val))
     print("\tregisters:")
-    for count, val in enumerate(state.register):
+    for count, val in enumerate(state.reg):
         print("\t\treg[ {index} ] {num}".format(index = count, num = val))
     print("end state\n")
 #------------------------------------------------------------------------
@@ -102,16 +102,25 @@ if len(sys.argv) < 2:
     print("huston we got prblm")
     exit
 
-state = pc_state()
+state = stateStruct()
 with open(sys.argv[1], 'r') as assembly:
     for line in assembly:
-        state.memory[state.memNum] = (int(line))
-        state.memNum +=1
+        state.mem[state.numMemory] = (int(line))
+        print("mem[{num}]={num2}".format(num = state.numMemory, num2 = state.mem[state.numMemory]))
+        state.numMemory +=1
+print("\n")
 
+count = 0
 while(True):
+    if done:
+        print("machine halted")
+        print("total of {num} instructions executed".format(num = count))
+        print("final state of machine:\n")
+        
     printState(state)
-    if state.done :
+    if done:
         break
-    instr = numToBin(state.memory[state.pc])
+    instr = numToBin(state.mem[state.pc])
     readInstr(instr, state)
     state.pc +=1
+    count += 1
