@@ -116,22 +116,31 @@ def readInstr(instr, state):
     return 0
 def printInstruction(instr):
     instr_str = numToBin(instr)
-    opcode_str = op_type(instr_str[:10])
-    if instr_type[opcode] == 'R':
-        arg0 = binToNum(instr[10:13],0)
-        arg1 = binToNum(instr[13:16],0)
-        arg2 = binToNum(instr[29:32],0)
+    opcode_str = op_type[binToNum(instr_str[:10], 0)]
+    result = ""
+    if instr_type[opcode_str] == 'R':
+        arg0 = binToNum(instr_str[10:13],0)
+        arg1 = binToNum(instr_str[13:16],0)
+        arg2 = binToNum(instr_str[29:32],0)
+        result = "{0} {0} {0} {0}".format(opcode_str, arg0, arg1, arg2)
+        print(result)
         return
-    if instr_type[opcode] == 'O':
+    if instr_type[opcode_str] == 'O':
+        result = "{0}".format(opcode_str)
+        print(result)
         return
-    if instr_type[opcode] == 'I':
-        arg0 = binToNum(instr[10:13],0)
-        arg1 = binToNum(instr[13:16],0)
-        arg2 = binToNum(instr[16:32],1)
+    if instr_type[opcode_str] == 'I':
+        arg0 = binToNum(instr_str[10:13],0)
+        arg1 = binToNum(instr_str[13:16],0)
+        arg2 = binToNum(instr_str[16:32],1)
+        result = "{0} {0} {0} {0}".format(opcode_str, arg0, arg1, arg2)
+        print(result)
         return
-    if instr_type[opcode] == 'J':
-        arg0 = binToNum(instr[10:13],0)
-        arg1 = binToNum(instr[13:16],0)
+    if instr_type[opcode_str] == 'J':
+        arg0 = binToNum(instr_str[10:13],0)
+        arg1 = binToNum(instr_str[13:16],0)
+        result = "{0} {0} {0} ".format(opcode_str, arg0, arg1)
+        print(result)
         return
 
 def printState(state):
@@ -147,28 +156,28 @@ def printState(state):
 	    print("\t\treg[ {num1} ] {num2}\n".format(num1 = index, num2 = val))
     print("\tIFID:\n")
     print("\t\tinstruction ")
-	#printInstruction(statePtr->IFID.instr)
+    printInstruction(state.IFID.instr)
     print("\t\tpcPlus1 {num}\n".format(num = state.IFID.pcPlus1))
     print("\tIDEX:\n")
     print("\t\tinstruction ")
-	#printInstruction(statePtr->IDEX.instr)
+    printInstruction(state.IDEX.instr)
     print("\t\tpcPlus1 {num}\n".format(num = state.IDEX.pcPlus1))
     print("\t\treadRegA {num}\n".format(num = state.IDEX.readRegA))
     print("\t\treadRegB {num}\n".format(num = state.IDEX.readRegB))
     print("\t\toffset {num}\n".format(num = state.IDEX.offset))
     print("\tEXMEM:\n")
     print("\t\tinstruction ")
-	#printInstruction(statePtr->EXMEM.instr)
+    printInstruction(state.EXMEM.instr)
     print("\t\tbranchTarget {num}\n".format(num = state.EXMEM.branchTarget))
     print("\t\taluResult {num}\n".format(num = state.EXMEM.aluResult))
     print("\t\treadRegB {num}\n".format(num = state.EXMEM.readRegB))
     print("\tMEMWB:\n")
     print("\t\tinstruction ")
-	#printInstruction(statePtr->MEMWB.instr)
+    printInstruction( state.MEMWB.instr)
     print("\t\twriteData {num}\n".format(num = state.MEMWB.writeData))
     print("\tWBEND:\n")
     print("\t\tinstruction ")
-	#printInstruction(statePtr->WBEND.instr)
+    printInstruction(state.WBEND.instr)
     print("\t\twriteData {num}\n".format(num = state.WBEND.writeData))
 
 #------------------------------------------------------------------------
