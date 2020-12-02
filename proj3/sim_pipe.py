@@ -11,26 +11,27 @@ op_type = {0:"add", 1:"nand",
            4:"beq",5:"jalr",
            6:"halt", 7:"noop"}
 done = 0
+noop = 0x1c00000
 class IFIDType():
-    instr = 0
+    instr = noop
     pcPlus1 = 0
 
 class IDEXType():
-    instr = 0
+    instr = noop
     pcPlus1 = 0
     readRegA = 0
     readRegB = 0
     offset = 0 
 class EXMEMType():
-    instr = 0
+    instr = noop
     branchTarget = 0
     aluResult = 0
     readRegB = 0
 class MEMWBType(): 
-    instr = 0
+    instr = noop
     writeData = 0
 class WBENDType(): 
-    instr = 0
+    instr = noop
     writeData = 0
 
 class stateStruct():
@@ -63,6 +64,10 @@ def nand(one,two):
     result = one & two
     result = ~result 
     return result
+def IFID_stage(state):
+    #state.IFID.instr
+    return
+
 def r_type_instr(opcode,instr,state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
@@ -71,6 +76,13 @@ def r_type_instr(opcode,instr,state):
         state.reg[arg2] = state.reg[arg0] + state.reg[arg1]
     if op_type[opcode] == 'nand':
         state.reg[arg2] = nand(state.reg[arg0],state.reg[arg1])
+def alu_calc(opcode, regA, regB):
+    if op_type[opcode] == 'add':
+        result = regA + regB
+    if op_type[opcode] == 'nand':
+        result = nand(regA,regB)
+    return result
+
 def i_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
@@ -98,7 +110,8 @@ def j_type_instr(opcode, instr, state):
     state.pc = state.reg[arg1] -1
 
 
-def readInstr(instr, state):
+def readInstr(cur_instr, state):
+    instr = numToBin(cur_instr) 
     opcode = binToNum(instr[0:10],0)
     if instr_type[opcode] == 'R':
         r_type_instr(opcode, instr,state)
@@ -112,8 +125,7 @@ def readInstr(instr, state):
     if instr_type[opcode] == 'J':
         j_type_instr(opcode, instr, state)
         return
-
-    return 0
+    return 
 def getInstruction(instr):
     instr_str = numToBin(instr)
     opcode_str = op_type[binToNum(instr_str[:10], 0)]
@@ -124,7 +136,7 @@ def getInstruction(instr):
         arg2 = binToNum(instr_str[29:32],0)
         result = "{0} {0} {0} {0}".format(opcode_str, arg0, arg1, arg2)
     if instr_type[opcode_str] == 'O':
-        result = "{0}".format(opcode_str)
+        result = "{0} {0} {0} {0}".format(opcode_str, 0, 0, 0)
     if instr_type[opcode_str] == 'I':
         arg0 = binToNum(instr_str[10:13],0)
         arg1 = binToNum(instr_str[13:16],0)
@@ -133,7 +145,7 @@ def getInstruction(instr):
     if instr_type[opcode_str] == 'J':
         arg0 = binToNum(instr_str[10:13],0)
         arg1 = binToNum(instr_str[13:16],0)
-        result = "{0} {0} {0} ".format(opcode_str, arg0, arg1)
+        result = "{0} {0} {0} {0}".format(opcode_str, arg0, arg1, 0)
     return result
 
 def printState(state):
@@ -172,6 +184,43 @@ def printState(state):
     print("\t\tinstruction ")
     print(getInstruction(state.WBEND.instr))
     print("\t\twriteData {num}\n".format(num = state.WBEND.writeData))
+def load_ifid(newState):
+    newState.IFID.instr = newState.instrMem[newState.pc]
+    newState.IFID.pcPlus1 = newState.pc + 1
+
+def ifid_instr_ex(newState):
+    instr = newState.IFID.instr 
+    newState.IDEX.instr = instr
+    newState.IDEX.pcPlus1 = newState.pc + 1
+    newState.IDEX.instr = instr
+    instr = numToBin(instr)
+    newState.IDEX.readRegA = binToNum(instr[10:13],0)
+    newState.IDEX.readRegB = binToNum(instr[13:16],0)
+    newState.IDEX.offset = binToNum(instr[16:32],1)
+    return
+
+def idex_instr_ex(newState):
+    instr = newState.IDEX.instr 
+    newState.EXMEM.instr = instr
+    newState.EXMEM.branchTarget = newState.IDEX.offset
+    opcode = op_type[binToNum( numToBin(newState.IDEX.instr)[0:10])]
+    newState.EXMEM.aluResult = alu_calc(opcode, newState.IDEX.readRegA,newState.IDEX.readRegB)
+    newState.EXMEM.readRegB = newState.IDEX.readRegB
+    return
+    
+def exmem_instr_ex(newState):
+    return
+def memwb_instr_ex(newState):
+    return
+def wbend_instr_ex(newState):
+    return
+def pump_instr(state):
+    ifid_instr_ex(state)
+    idex_instr_ex(state)
+    exmem_instr_ex(state)
+    memwb_instr_ex(state)
+    wbend_instr_ex(state)
+    return
 
 #------------------------------------------------------------------------
 # start of the program
@@ -180,16 +229,16 @@ if len(sys.argv) < 2:
     exit
 
 state = stateStruct()
+newState = stateStruct()
 with open(sys.argv[1], 'r') as assembly:
     for line in assembly:
-        state.instrMem[state.numMemory] = getInstruction(int(line))
+        state.instrMem[state.numMemory] = (int(line))
         state.dataMem[state.numMemory] = (int(line))
         print("mem[{num}]={num2}".format(num = state.numMemory, num2 = state.dataMem[state.numMemory]))
         state.numMemory +=1
 print("\tinstruction memory:")
 for index, val in enumerate(state.instrMem):
-    print("\t\tinstrMem[ {num} ]={num2}".format(num = index, num2 = val))
-
+    print("\t\tinstrMem[ {num} ]= {num2}".format(num = index, num2 = getInstruction(val)))
 
 count = 0
 while(True):
@@ -197,11 +246,13 @@ while(True):
         print("machine halted")
         print("total of {num} instructions executed".format(num = count))
         print("final state of machine:\n")
-        
     printState(state)
     if done:
         break
-    instr = numToBin(state.dataMem[state.pc])
-    readInstr(instr, state)
-    state.pc +=1
+    newState = state
+    newState.cycles+=1
+    load_ifid(newState) #loading in IFID
+    pump_instr(newState)
+    newState.pc +=1
     count += 1
+    state = newState
