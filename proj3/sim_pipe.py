@@ -64,38 +64,77 @@ def nand(one,two):
     result = one & two
     result = ~result 
     return result
-def IFID_stage(state):
-    #state.IFID.instr
+
+def alu_calc(opcode, num1, num2):
+    if op_type[opcode] == 'add':
+        result = num1 + num2
+    if op_type[opcode] == 'nand':
+        result = nand(num1,num2)
+    return result
+def load_ifid(newState):
+    newState.IFID.instr = newState.instrMem[newState.pc]
+    newState.IFID.pcPlus1 = newState.pc + 1
+
+def ifid_instr_ex(newState):
+    instr = newState.IFID.instr 
+    newState.IDEX.instr = instr
+    newState.IDEX.pcPlus1 = newState.pc + 1
+    newState.IDEX.instr = instr
+    instr = numToBin(instr)
+    newState.IDEX.readRegA = binToNum(instr[10:13],0)
+    newState.IDEX.readRegB = binToNum(instr[13:16],0)
+    newState.IDEX.offset = binToNum(instr[16:32],1)
     return
 
-def r_type_instr(opcode,instr,state):
-    arg0 = binToNum(instr[10:13],0)
-    arg1 = binToNum(instr[13:16],0)
-    arg2 = binToNum(instr[29:32],0)
-    if op_type[opcode] == 'add':
-        state.reg[arg2] = state.reg[arg0] + state.reg[arg1]
-    if op_type[opcode] == 'nand':
-        state.reg[arg2] = nand(state.reg[arg0],state.reg[arg1])
-def alu_calc(opcode, regA, regB):
-    if op_type[opcode] == 'add':
-        result = regA + regB
-    if op_type[opcode] == 'nand':
-        result = nand(regA,regB)
-    return result
-
-def i_type_instr(opcode, instr, state):
-    arg0 = binToNum(instr[10:13],0)
-    arg1 = binToNum(instr[13:16],0)
-    arg2 = binToNum(instr[16:32],1)
-    if op_type[opcode] == 'lw':  
-        state.reg[arg1] = state.dataMem[state.reg[arg0] + arg2 ]  
-        return
-    if op_type[opcode] == 'beq':
-        if (state.reg[arg0] - state.reg[arg1]) == 0:
-            state.pc += arg2
-            return
-    if op_type[opcode] == 'sw':
-        state.dataMem[state.reg[arg0] + arg2] = state.reg[arg1]  
+def idex_instr_ex(newState):
+    instr = newState.IDEX.instr 
+    newState.EXMEM.instr = instr
+    newState.EXMEM.pcPlus1 = newState.pc + 1
+    newState.EXMEM.branchTarget = alu_calc("add", newState.EXMEM.pcPlus1,newState.IDEX.offset)  
+    opcode = op_type[binToNum( numToBin(newState.IDEX.instr)[0:10])]
+    if opcode == 'lw' or opcode == 'sw':  
+        newState.EXMEM.aluResult = alu_calc("add",newState.EXMEM.readRegA,newState.EXMEM.offset) 
+    else:
+        newState.EXMEM.aluResult = alu_calc(opcode, newState.IDEX.readRegA,newState.IDEX.readRegB)
+    newState.EXMEM.readRegB = newState.IDEX.readRegB
+    return
+def exmem_instr_ex(newState):
+    instr = newState.EXMEM.instr 
+    newState.MEMWB.instr = instr
+    newState.MEMWB.pcPlus1 = newState.pc + 1
+    opcode = op_type[binToNum( numToBin(newState.MEMWB.instr)[0:10])]
+    if opcode == "lw":
+        newState.MEMWB.writeData = newState.dataMem[newState.EXMEM.aluResult] 
+    if opcode == "sw":
+        newState.dataMem[newState.EXMEM.aluResult] = newState.EXMEM.readRegB
+    else:
+        newState.MEMWB.writeData = newState.EXMEM.aluResult   
+    return
+def memwb_instr_ex(newState):
+    instr = newState.MEMWB.instr 
+    newState.WBEND.instr = instr
+    newState.WBEND.pcPlus1 = newState.pc + 1
+    newState.WBEND.writeData =newState.MEMWB.writeData 
+    instr = numToBin(instr)
+    opcode = op_type[binToNum(instr[0:10])]
+    if opcode == "add"  or opcode == "nand":  
+        offset = binToNum(instr[16:32],1)
+        newState.reg[offset] = newState.WBEND.writeData
+    if opcode == "lw":
+        writeRegB = binToNum(instr[13:16],0)
+        newState.reg[writeRegB] = newState.WBEND.writeData
+    return
+def wbend_instr_ex(newState):
+    return
+def pump_instr(state):
+    load_ifid(state)
+    ifid_instr_ex(state)
+    idex_instr_ex(state)
+    exmem_instr_ex(state)
+    memwb_instr_ex(state)
+    wbend_instr_ex(state)
+    return
+    
 def o_type_instr(opcode, instr, state):
     if op_type[opcode] == 'halt':
         global done
@@ -103,29 +142,7 @@ def o_type_instr(opcode, instr, state):
         return
     if op_type[opcode] == 'noop':
         return
-def j_type_instr(opcode, instr, state):
-    arg0 = binToNum(instr[10:13],0)
-    arg1 = binToNum(instr[13:16],0)
-    state.reg[arg0] = state.pc +1
-    state.pc = state.reg[arg1] -1
 
-
-def readInstr(cur_instr, state):
-    instr = numToBin(cur_instr) 
-    opcode = binToNum(instr[0:10],0)
-    if instr_type[opcode] == 'R':
-        r_type_instr(opcode, instr,state)
-        return
-    if instr_type[opcode] == 'O':
-        o_type_instr(opcode, instr, state)
-        return
-    if instr_type[opcode] == 'I':
-        i_type_instr(opcode, instr, state)
-        return
-    if instr_type[opcode] == 'J':
-        j_type_instr(opcode, instr, state)
-        return
-    return 
 def getInstruction(instr):
     instr_str = numToBin(instr)
     opcode_str = op_type[binToNum(instr_str[:10], 0)]
@@ -184,43 +201,7 @@ def printState(state):
     print("\t\tinstruction ")
     print(getInstruction(state.WBEND.instr))
     print("\t\twriteData {num}\n".format(num = state.WBEND.writeData))
-def load_ifid(newState):
-    newState.IFID.instr = newState.instrMem[newState.pc]
-    newState.IFID.pcPlus1 = newState.pc + 1
 
-def ifid_instr_ex(newState):
-    instr = newState.IFID.instr 
-    newState.IDEX.instr = instr
-    newState.IDEX.pcPlus1 = newState.pc + 1
-    newState.IDEX.instr = instr
-    instr = numToBin(instr)
-    newState.IDEX.readRegA = binToNum(instr[10:13],0)
-    newState.IDEX.readRegB = binToNum(instr[13:16],0)
-    newState.IDEX.offset = binToNum(instr[16:32],1)
-    return
-
-def idex_instr_ex(newState):
-    instr = newState.IDEX.instr 
-    newState.EXMEM.instr = instr
-    newState.EXMEM.branchTarget = newState.IDEX.offset
-    opcode = op_type[binToNum( numToBin(newState.IDEX.instr)[0:10])]
-    newState.EXMEM.aluResult = alu_calc(opcode, newState.IDEX.readRegA,newState.IDEX.readRegB)
-    newState.EXMEM.readRegB = newState.IDEX.readRegB
-    return
-    
-def exmem_instr_ex(newState):
-    return
-def memwb_instr_ex(newState):
-    return
-def wbend_instr_ex(newState):
-    return
-def pump_instr(state):
-    ifid_instr_ex(state)
-    idex_instr_ex(state)
-    exmem_instr_ex(state)
-    memwb_instr_ex(state)
-    wbend_instr_ex(state)
-    return
 
 #------------------------------------------------------------------------
 # start of the program
@@ -251,7 +232,6 @@ while(True):
         break
     newState = state
     newState.cycles+=1
-    load_ifid(newState) #loading in IFID
     pump_instr(newState)
     newState.pc +=1
     count += 1
