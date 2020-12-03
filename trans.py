@@ -1,5 +1,6 @@
 # Hector Rizo
-# this program is written in python, using python version 3 or higher.
+# this program is written in python3, 
+# devloped on windows using python version 3.8.5 .
 import sys
 
 instr_type = {"add": "R", "nand":"R",
@@ -31,7 +32,11 @@ def getFills(items):
     for line in items:
         assemble = line.strip('\n').split('\t')
         if assemble[0]: 
-           result[assemble[0]] = count 
+            if assemble[0] not in result:
+                result[assemble[0]] = count 
+            else:
+                print("multiple of the same label")
+                exit(1)
         count += 1
 
     return result
@@ -46,9 +51,9 @@ if len(sys.argv) < 3:
     print("huston we got prblm")
     exit
 
-assembler = open(sys.argv[1], 'r')
 machine = open(sys.argv[2], 'w')
-fill_dict = getFills(assembler)
+with open(sys.argv[1], 'r') as assembler:
+    fill_dict = getFills(assembler)
 
 assembler = open(sys.argv[1], 'r')
 label = ""
@@ -61,7 +66,11 @@ lineCount = 0
 try:
     for line in assembler:
         assemble = line.strip('\n').split('\t')
-        opcode = opcodes[assemble[1]]
+        if assemble[1] in opcodes:
+            opcode = opcodes[assemble[1]]
+        else:
+            print("inccorect opcode detected")
+            exit(1)
         strTillOpp = "{opcode:b}".format(opcode = opcode).zfill(10)
         checkItems = checkArgs(assemble[1:5])
         for item in checkItems:
