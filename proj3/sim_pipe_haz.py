@@ -1,5 +1,7 @@
 # Hector Rizo
 # this program is written in python, using python version 3 or higher.
+#developed on windows using python3 ... it can run on linprog
+# pipelining works. and data hazards with addition works. other hazards are missing
 import sys
 import copy
 
@@ -80,41 +82,77 @@ def load_ifid(state,newState):
     return
 
 def ifid_instr_ex(state,newState):
+    global hist
     instr = state.IFID.instr 
     newState.IDEX.instr = instr
     newState.IDEX.pcPlus1 = state.IFID.pcPlus1 
     instr = numToBin(instr)
+    opcode = op_type[binToNum(instr[0:10], 0)]
     num1 =  binToNum(instr[10:13],0)
     num2 =  binToNum(instr[13:16],0)
     num3 = binToNum(instr[16:32],1)
+    # hazard control
     if num1 not in hist:
-        hist[num1] +=1
         newState.IDEX.readRegA = state.reg[num1]
     else:
         newState.IDEX.readRegA = None
     if num2 not in hist:
-        hist[num2] +=1
         newState.IDEX.readRegB = state.reg[num2]
     else:
         newState.IDEX.readRegB = None
-    if num3 not in hist:
-        hist[num3] +=1
-        newState.IDEX.offset = num3
-    else:
-        newState.IDEX.offset = None 
+    newState.IDEX.offset = num3
+    if opcode == "add" or opcode == "nand":
+        hist[num3] = state.cycles
+    if opcode == "lw" :
+        hist[num2] = state.cycles
     return
 
+def which_hazard(state,hist, num):
+    result = 0
+    dif = state.cycles - hist[num] - 1
+    if dif == 1:
+        result = state.EXMEM.aluResult 
+    if dif == 2:
+        result = state.MEMWB.writeData 
+    if dif == 0:
+        result = state.reg[num]
+    return result
+
 def idex_instr_ex(state,newState):
+    global hist
+    global noop
     instr = state.IDEX.instr 
-    #dealing w hazard
     newState.EXMEM.instr = instr
-    newState.EXMEM.branchTarget = alu_calc("add", state.IDEX.pcPlus1,state.IDEX.offset)  
     opcode = op_type[binToNum( numToBin(state.IDEX.instr)[0:10],0)]
+    #dealing w hazard
+    tempInstr = numToBin(instr)
+    reg_str_1 =  binToNum(tempInstr[10:13],0)
+    reg_str_2 =  binToNum(tempInstr[13:16],0)
+    reg_str_3 = binToNum(tempInstr[16:32],1)
+    num1 =state.IDEX.readRegA  
+    num2 = state.IDEX.readRegB 
+    num3 = state.IDEX.offset
+    
+    if state.IDEX.readRegA == None:
+       num1 = which_hazard(state, hist, reg_str_1)
+    if state.IDEX.readRegB == None:
+       opcode = op_type[binToNum( numToBin(state.EXMEM.instr)[0:10],0)]
+       if opcode == 'lw':
+           newState.IDEX.instr = noop
+       num2 = which_hazard(state, hist, reg_str_2)
+    if state.IDEX.offset == None:
+       num3 = which_hazard(state, hist, reg_str_3)
+    # regular execution
+    newState.EXMEM.branchTarget = alu_calc("add", state.IDEX.pcPlus1,num3)  
     if opcode == 'lw' or opcode == 'sw':  
-        newState.EXMEM.aluResult = alu_calc("add",state.IDEX.readRegA,state.IDEX.offset) 
+        newState.EXMEM.aluResult = alu_calc("add",num1,num3) 
     else:
-        newState.EXMEM.aluResult = alu_calc(opcode, state.IDEX.readRegA,state.IDEX.readRegB)
-    newState.EXMEM.readRegB = state.IDEX.readRegB
+        newState.EXMEM.aluResult = alu_calc(opcode, num1,num2)
+    newState.EXMEM.readRegB = num2
+    #taking branch sometimes
+    if opcode == 'beq':
+        if num1 - num2 == 0:
+            newState.pc = newState.EXMEM.branchTarget
     return
 def exmem_instr_ex(state,newState):
     instr = state.EXMEM.instr 
@@ -130,6 +168,7 @@ def exmem_instr_ex(state,newState):
         newState.MEMWB.writeData = state.EXMEM.aluResult   
     return
 def memwb_instr_ex(state,newState):
+    global hist
     instr = state.MEMWB.instr 
     newState.WBEND.instr = instr
     newState.WBEND.writeData =state.MEMWB.writeData 
@@ -137,9 +176,11 @@ def memwb_instr_ex(state,newState):
     opcode = op_type[binToNum(instr[0:10],0)]
     if opcode == "add"  or opcode == "nand":  
         offset = binToNum(instr[16:32],1)
-        newState.reg[offset] = state.WBEND.writeData
+        hist.pop(offset)
+        newState.reg[offset] = state.MEMWB.writeData
     if opcode == "lw":
         writeRegB = binToNum(instr[13:16],0)
+        hist.pop(writeRegB)
         newState.reg[writeRegB] = state.MEMWB.writeData
     return
 def wbend_instr_ex(state,newState):

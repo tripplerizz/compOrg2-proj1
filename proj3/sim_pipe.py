@@ -101,6 +101,9 @@ def idex_instr_ex(state,newState):
     else:
         newState.EXMEM.aluResult = alu_calc(opcode, state.IDEX.readRegA,state.IDEX.readRegB)
     newState.EXMEM.readRegB = state.IDEX.readRegB
+    if opcode == 'beq':
+        if state.IDEX.readRegA - state.IDEX.readRegB == 0:
+            newState.pc = newState.EXMEM.branchTarget
     return
 def exmem_instr_ex(state,newState):
     instr = state.EXMEM.instr 
