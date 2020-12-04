@@ -65,8 +65,8 @@ def o_type_instr(opcode, instr, state):
 def j_type_instr(opcode, instr, state):
     arg0 = binToNum(instr[10:13],0)
     arg1 = binToNum(instr[13:16],0)
-    state.reg[arg0] = state.pc +1
-    state.pc = state.reg[arg1] -1
+    state.reg[arg1] = state.pc +1
+    state.pc = state.reg[arg0] -1
 
 
 def readInstr(instr, state):
@@ -89,10 +89,10 @@ def printState(state):
     print("@@@")
     print("state:")
     print("\tpc {num}".format(num = state.pc))
-    print("\tmemory:")
+    print("\tmem:")
     for count, val in enumerate(state.mem[:state.numMemory]):
         print("\t\tmem[ {index} ] {num}".format(index = count, num = val))
-    print("\tregisters:")
+    print("\tregs:")
     for count, val in enumerate(state.reg):
         print("\t\treg[ {index} ] {num}".format(index = count, num = val))
     print("end state\n")
